@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OFIR - ניהול תורים</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --gold: #D4AF37;
+            --gold-hover: #b5952f;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --input-bg: #2d2d2d;
+            --border: #333;
+            --slot-occupied: #2c2c2c; /* כהה יותר כשתפוס */
+            --slot-occupied-border: #D4AF37;
+        }
+
+        * {
+            box-sizing: border-box;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            padding-bottom: 40px;
+        }
+
+        /* --- Header & Logo --- */
+        header {
+            background: linear-gradient(180deg, #000000 0%, #1a1a1a 100%);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid var(--gold);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+        }
+
+        .logo {
+            font-family: 'Times New Roman', serif;
+            color: var(--gold);
+            font-size: 1.8rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            margin: 0;
+        }
+        
+        .logo span {
+            display: block;
+            font-size: 0.8rem;
+            font-family: sans-serif;
+            letter-spacing: 4px;
+            color: #fff;
+            margin-top: 5px;
+        }
+
+        /* --- Date Navigation --- */
+        .date-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--card-bg);
+            padding: 15px;
+            margin: 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .date-display {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .nav-btn {
+            background: var(--gold);
+            border: none;
+            color: #000;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* --- Schedule Grid --- */
+        .schedule-container {
+            padding: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .time-slot {
+            background-color: var(--card-bg);
+            margin-bottom: 10px;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        /* עיצוב כשהתור תפוס */
+        .time-slot.occupied {
+            border-left: 4px solid var(--gold);
+            background-color: #252525;
+        }
+
+        .time-label {
+            font-weight: bold;
+            color: var(--gold);
+            width: 60px;
+            font-size: 1rem;
+        }
+
+        .client-input-wrapper {
+            flex-grow: 1;
+            margin-right: 10px;
+            position: relative;
+        }
+
+        .client-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #444;
+            color: #fff;
+            padding: 8px;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+
+        .client-input:focus {
+            border-bottom: 1px solid var(--gold);
+        }
+
+        .clear-btn {
+            background: none;
+            border: none;
+            color: #ff4d4d;
+            font-size: 1.2rem;
+            cursor: pointer;
+            opacity: 0;
+            padding: 0 10px;
+        }
+
+        .time-slot.occupied .clear-btn {
+            opacity: 1;
+        }
+
+        /* --- Stats / Footer --- */
+        .status-bar {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-top: 20px;
+        }
+
+        /* --- Notifications --- */
+        #notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--gold);
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 200;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            OFIR
+            <span>MASTER BARBER</span>
+        </div>
+    </header>
+
+    <div class="date-nav">
+        <button class="nav-btn" onclick="changeDate(-1)">&#8594;</button>
+        <div class="date-display" id="currentDateDisplay"></div>
+        <button class="nav-btn" onclick="changeDate(1)">&#8592;</button>
+    </div>
+
+    <div class="schedule-container" id="scheduleGrid">
+        </div>
+
+    <div class="status-bar">
+        מערכת מאובטחת | נתונים נשמרים מקומית
+    </div>
+
+    <div id="notification">נשמר בהצלחה</div>
+
+    <datalist id="clientList">
+        </datalist>
+
+<script>
+    /**
+     * CYBER & SECURITY NOTES:
+     * 1. Data Storage: משתמש ב-LocalStorage. המידע נשמר אך ורק בדפדפן של המשתמש.
+     * 2. Input Sanitization: כל קלט מהמשתמש עובר ניקוי לפני הדפסה למסך למניעת XSS.
+     * 3. State Management: ניהול חכם של תאריכים למניעת דריסת נתונים.
+     */
+
+    // --- Configuration ---
+    const START_HOUR = 11; // 11:00 AM
+    const END_HOUR = 23;   // 11:00 PM
+    const SLOT_DURATION = 15; // Minutes
+    const STORAGE_KEY_PREFIX = "ofir_barber_data_";
+    const CLIENT_STATS_KEY = "ofir_client_stats";
+
+    // --- State ---
+    let currentDate = new Date();
+    
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        updateDateDisplay();
+        renderSchedule();
+        loadClientSuggestions();
+    });
+
+    // --- Core Functions ---
+
+    function getStorageKey(date) {
+        // Format: YYYY-MM-DD
+        const d = date.getDate().toString().padStart(2, '0');
+        const m = (date.getMonth() + 1).toString().padStart(2, '0');
+        const y = date.getFullYear();
+        return `${STORAGE_KEY_PREFIX}${y}-${m}-${d}`;
+    }
+
+    function updateDateDisplay() {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDateDisplay').textContent = currentDate.toLocaleDateString('he-IL', options);
+    }
+
+    function changeDate(days) {
+        currentDate.setDate(currentDate.getDate() + days);
+        updateDateDisplay();
+        renderSchedule();
+    }
+
+    function renderSchedule() {
+        const container = document.getElementById('scheduleGrid');
+        container.innerHTML = ''; // Clean view
+
+        // Load data for this day
+        const dayData = JSON.parse(localStorage.getItem(getStorageKey(currentDate))) || {};
+
+        let totalMinutesStart = START_HOUR * 60;
+        let totalMinutesEnd = END_HOUR * 60;
+
+        for (let time = totalMinutesStart; time < totalMinutesEnd; time += SLOT_DURATION) {
+            const hour = Math.floor(time / 60);
+            const minute = time % 60;
+            const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            
+            const clientName = dayData[timeString] || '';
+            
+            // Create DOM Elements safely
+            const slotEl = document.createElement('div');
+            slotEl.className = `time-slot ${clientName ? 'occupied' : ''}`;
+
+            const timeLabel = document.createElement('div');
+            timeLabel.className = 'time-label';
+            timeLabel.textContent = timeString;
+
+            const inputWrapper = document.createElement('div');
+            inputWrapper.className = 'client-input-wrapper';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'client-input';
+            input.placeholder = 'פנוי...';
+            input.value = clientName;
+            input.setAttribute('list', 'clientList'); // Connect to datalist
+            
+            // Event Listener for saving on change
+            input.addEventListener('change', (e) => saveSlot(timeString, e.target.value));
+
+            const clearBtn = document.createElement('button');
+            clearBtn.className = 'clear-btn';
+            clearBtn.innerHTML = '&times;';
+            clearBtn.onclick = () => {
+                input.value = '';
+                saveSlot(timeString, '');
+            };
+
+            inputWrapper.appendChild(input);
+            slotEl.appendChild(timeLabel);
+            slotEl.appendChild(inputWrapper);
+            slotEl.appendChild(clearBtn);
+
+            container.appendChild(slotEl);
+        }
+    }
+
+    // --- Logic & Security ---
+
+    function sanitizeInput(str) {
+        // Basic sanitization to prevent storing HTML tags (XSS protection)
+        const div = document.createElement('div');
+        div.innerText = str;
+        return div.innerHTML;
+    }
+
+    function saveSlot(timeString, name) {
+        const safeName = sanitizeInput(name.trim());
+        const key = getStorageKey(currentDate);
+        
+        let dayData = JSON.parse(localStorage.getItem(key)) || {};
+
+        if (safeName) {
+            dayData[timeString] = safeName;
+            updateClientStats(safeName); // Smart Autocomplete learning
+        } else {
+            delete dayData[timeString];
+        }
+
+        localStorage.setItem(key, JSON.stringify(dayData));
+        
+        renderSchedule(); // Re-render to update styling
+        if (safeName) showNotification();
+    }
+
+    function showNotification() {
+        const notif = document.getElementById('notification');
+        notif.style.opacity = '1';
+        setTimeout(() => {
+            notif.style.opacity = '0';
+        }, 2000);
+    }
+
+    // --- Smart Autocomplete (Frequency Based) ---
+
+    function updateClientStats(name) {
+        let stats = JSON.parse(localStorage.getItem(CLIENT_STATS_KEY)) || {};
+        
+        // Normalize name to avoid duplicates (e.g., "Yossi" vs "yossi")
+        const lowerName = name.toLowerCase();
+        
+        if (!stats[lowerName]) {
+            stats[lowerName] = { original: name, count: 0 };
+        }
+        stats[lowerName].count++;
+        
+        localStorage.setItem(CLIENT_STATS_KEY, JSON.stringify(stats));
+        loadClientSuggestions(); // Refresh list immediately
+    }
+
+    function loadClientSuggestions() {
+        const stats = JSON.parse(localStorage.getItem(CLIENT_STATS_KEY)) || {};
+        const dataList = document.getElementById('clientList');
+        dataList.innerHTML = '';
+
+        // Convert object to array and sort by frequency (highest first)
+        const sortedClients = Object.values(stats).sort((a, b) => b.count - a.count);
+
+        // Take top 50 clients to keep DOM light
+        sortedClients.slice(0, 50).forEach(client => {
+            const option = document.createElement('option');
+            option.value = client.original;
+            dataList.appendChild(option);
+        });
+    }
+
+</script>
+</body>
+</html>
