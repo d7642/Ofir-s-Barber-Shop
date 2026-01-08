@@ -3,391 +3,394 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OFIR - ניהול תורים</title>
+    <title>OFIR - ניהול מספרה</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --gold: #D4AF37;
-            --gold-hover: #b5952f;
-            --text-main: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --input-bg: #2d2d2d;
-            --border: #333;
-            --slot-occupied: #2c2c2c; /* כהה יותר כשתפוס */
-            --slot-occupied-border: #D4AF37;
+            --bg-dark: #0f0f10;
+            --card-dark: #1a1a1c;
+            --gold: #C6A87C; /* זהב יוקרתי יותר, פחות צהוב */
+            --gold-glow: rgba(198, 168, 124, 0.3);
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --border-color: #333;
         }
 
         * {
             box-sizing: border-box;
-            outline: none;
             -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at top, #252525 0%, var(--bg-dark) 100%);
             color: var(--text-main);
             margin: 0;
-            padding: 0;
-            padding-bottom: 40px;
+            padding-bottom: 50px;
         }
 
-        /* --- Header & Logo --- */
+        /* --- Header & Logo Section --- */
         header {
-            background: linear-gradient(180deg, #000000 0%, #1a1a1a 100%);
-            padding: 20px;
             text-align: center;
-            border-bottom: 2px solid var(--gold);
+            padding: 25px 10px 15px 10px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(20,20,20,0) 100%);
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
-        .logo {
+        .logo-container {
+            display: inline-block;
+            text-align: center;
+            animation: fadeIn 1s ease;
+        }
+
+        .logo-svg {
+            width: 60px;
+            height: 60px;
+            fill: var(--gold);
+            filter: drop-shadow(0 0 8px var(--gold-glow));
+            margin-bottom: 5px;
+        }
+
+        .brand-name {
             font-family: 'Times New Roman', serif;
-            color: var(--gold);
             font-size: 1.8rem;
-            font-weight: bold;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-            margin: 0;
-        }
-        
-        .logo span {
-            display: block;
-            font-size: 0.8rem;
-            font-family: sans-serif;
-            letter-spacing: 4px;
+            letter-spacing: 3px;
             color: #fff;
-            margin-top: 5px;
+            text-transform: uppercase;
+            margin: 0;
+            line-height: 1;
+            font-weight: 700;
         }
 
-        /* --- Date Navigation --- */
-        .date-nav {
+        .brand-sub {
+            font-size: 0.75rem;
+            color: var(--gold);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        /* --- Date Picker Section --- */
+        .date-controls {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            background-color: var(--card-bg);
-            padding: 15px;
-            margin: 10px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
+            gap: 15px;
+            margin: 20px auto;
+            max-width: 90%;
+            background: var(--card-dark);
+            padding: 10px;
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            border: 1px solid var(--border-color);
+        }
+
+        .nav-arrow {
+            background: none;
+            border: none;
+            color: var(--gold);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0 15px;
+        }
+
+        /* עיצוב מיוחד לתאריך שפותח את היומן */
+        .date-trigger-wrapper {
+            position: relative;
+            text-align: center;
+            flex-grow: 1;
         }
 
         .date-display {
             font-size: 1.1rem;
             font-weight: bold;
+            color: #fff;
+            pointer-events: none; /* כדי שהלחיצה תעבור לאינפוט */
+        }
+        
+        .date-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
         }
 
-        .nav-btn {
-            background: var(--gold);
-            border: none;
-            color: #000;
-            font-weight: bold;
-            padding: 8px 15px;
-            border-radius: 6px;
+        /* האינפוט האמיתי שקוף ויושב מעל הטקסט */
+        #hiddenDatePicker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
             cursor: pointer;
-            transition: 0.2s;
+            z-index: 10;
         }
 
-        .nav-btn:active {
-            transform: scale(0.95);
-        }
-
-        /* --- Schedule Grid --- */
-        .schedule-container {
-            padding: 10px;
+        /* --- Schedule List --- */
+        .schedule-list {
             max-width: 600px;
             margin: 0 auto;
+            padding: 0 15px;
         }
 
-        .time-slot {
-            background-color: var(--card-bg);
-            margin-bottom: 10px;
-            border-radius: 8px;
-            padding: 12px;
+        .slot-card {
+            background: var(--card-dark);
+            margin-bottom: 12px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            border-left: 4px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        /* עיצוב כשהתור תפוס */
-        .time-slot.occupied {
-            border-left: 4px solid var(--gold);
-            background-color: #252525;
-        }
-
-        .time-label {
-            font-weight: bold;
-            color: var(--gold);
-            width: 60px;
-            font-size: 1rem;
-        }
-
-        .client-input-wrapper {
-            flex-grow: 1;
-            margin-right: 10px;
+            padding: 15px;
+            border-right: 3px solid transparent;
+            transition: transform 0.2s, background 0.2s;
             position: relative;
+            overflow: hidden;
         }
 
-        .client-input {
-            width: 100%;
+        .slot-card:focus-within {
+            transform: scale(1.02);
+            background: #252527;
+            border-right: 3px solid var(--gold);
+        }
+
+        .slot-card.occupied {
+            border-right: 3px solid var(--gold);
+            background: linear-gradient(90deg, #1f1f22 0%, #2a2a2e 100%);
+        }
+
+        .slot-time {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--gold);
+            width: 65px;
+            flex-shrink: 0;
+        }
+
+        .slot-input {
+            flex-grow: 1;
             background: transparent;
             border: none;
-            border-bottom: 1px solid #444;
             color: #fff;
-            padding: 8px;
-            font-size: 1rem;
-            transition: 0.3s;
+            font-size: 1.1rem;
+            padding: 5px;
+        }
+        
+        .slot-input::placeholder {
+            color: #444;
+            font-size: 0.9rem;
         }
 
-        .client-input:focus {
-            border-bottom: 1px solid var(--gold);
+        .icon-indicator {
+            color: #333;
+            margin-left: 10px;
+        }
+        
+        .slot-card.occupied .icon-indicator {
+            color: var(--gold);
         }
 
-        .clear-btn {
-            background: none;
-            border: none;
-            color: #ff4d4d;
-            font-size: 1.2rem;
-            cursor: pointer;
-            opacity: 0;
-            padding: 0 10px;
-        }
-
-        .time-slot.occupied .clear-btn {
-            opacity: 1;
-        }
-
-        /* --- Stats / Footer --- */
-        .status-bar {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            margin-top: 20px;
-        }
-
-        /* --- Notifications --- */
-        #notification {
+        /* --- Floating Notification --- */
+        #toast {
             position: fixed;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--gold);
+            transform: translateX(-50%) translateY(100px);
+            background: var(--gold);
             color: #000;
-            padding: 10px 20px;
-            border-radius: 20px;
+            padding: 12px 30px;
+            border-radius: 30px;
             font-weight: bold;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
+            box-shadow: 0 5px 20px rgba(198, 168, 124, 0.4);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 200;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
+        
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">
-            OFIR
-            <span>MASTER BARBER</span>
+        <div class="logo-container">
+            <svg class="logo-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 6C4.89543 6 4 6.89543 4 8C4 9.10457 4.89543 10 6 10C7.10457 10 8 9.10457 8 8C8 6.89543 7.10457 6 6 6ZM2 8C2 5.79086 3.79086 4 6 4C8.20914 4 10 5.79086 10 8C10 9.27878 9.4005 10.4161 8.46665 11.1373L11.6642 16.5362L13.8624 12.8711C13.2987 12.0623 12.9157 11.0854 12.8368 10.0132C12.8123 9.68067 12.8 9.34298 12.8 9C12.8 5.68629 15.4863 3 18.8 3C20.5673 3 22 4.43269 22 6.2C22 7.24765 21.4965 8.18349 20.7099 8.79034L20.8984 8.91602L20.8987 8.91649L21.3533 9.68369C21.7588 10.3679 21.5293 11.2476 20.8451 11.6531C20.1608 12.0586 19.2811 11.8291 18.8756 11.1449L18.6657 10.7906C18.7538 10.2796 18.8 9.74903 18.8 9.2C18.8 9.13298 18.7995 9.0663 18.7984 9.00001C18.799 9.00001 18.7995 9 18.8 9C17.1431 9 15.8 7.65685 15.8 6H15.8016C15.8118 6.64367 16.0357 7.23485 16.4168 7.71261C16.6341 7.98501 16.9032 8.21735 17.2086 8.40076L13.2081 15.0683C12.8687 15.634 12.1384 15.8348 11.5492 15.5244L11.5401 15.5196L9.67389 12.3688L5.59998 19.2435C5.19448 19.9278 4.31477 20.1573 3.63054 19.7518C2.94631 19.3463 2.71683 18.4666 3.12232 17.7823L6.87844 11.4439C5.1973 10.7676 4 9.1259 4 7.2C4 7.1337 4.00049 7.06767 4.00147 7.00194C2.86395 7.15197 2 8.12586 2 9.3V20C2 21.1046 2.89543 22 4 22H20C21.1046 22 22 21.1046 22 20V12.5C22 11.6716 21.3284 11 20.5 11C19.6716 11 19 11.6716 19 12.5V20H4V13.8824L6.23004 12.5609C6.15175 12.1387 6.11116 11.7056 6.11111 11.2667L6.11111 11.2666L6 6ZM18.8 5C18.1373 5 17.6 5.53726 17.6 6.2C17.6 6.86274 18.1373 7.4 18.8 7.4C19.4627 7.4 20 6.86274 20 6.2C20 5.53726 19.4627 5 18.8 5Z"/>
+            </svg>
+            <h1 class="brand-name">OFIR</h1>
+            <div class="brand-sub">Master Barber</div>
         </div>
     </header>
 
-    <div class="date-nav">
-        <button class="nav-btn" onclick="changeDate(-1)">&#8594;</button>
-        <div class="date-display" id="currentDateDisplay"></div>
-        <button class="nav-btn" onclick="changeDate(1)">&#8592;</button>
-    </div>
-
-    <div class="schedule-container" id="scheduleGrid">
+    <div class="date-controls">
+        <button class="nav-arrow" onclick="changeDate(-1)">&#10094;</button>
+        
+        <div class="date-trigger-wrapper">
+            <div class="date-display" id="displayDay">היום</div>
+            <div class="date-sub" id="displayDate">--/--/----</div>
+            <input type="date" id="hiddenDatePicker" onchange="jumpToDate(this.value)">
         </div>
 
-    <div class="status-bar">
-        מערכת מאובטחת | נתונים נשמרים מקומית
+        <button class="nav-arrow" onclick="changeDate(1)">&#10095;</button>
     </div>
 
-    <div id="notification">נשמר בהצלחה</div>
+    <div class="schedule-list" id="scheduleContainer">
+        </div>
 
-    <datalist id="clientList">
+    <div id="toast">התור נשמר ✓</div>
+
+    <datalist id="clientHistory">
         </datalist>
 
 <script>
-    /**
-     * CYBER & SECURITY NOTES:
-     * 1. Data Storage: משתמש ב-LocalStorage. המידע נשמר אך ורק בדפדפן של המשתמש.
-     * 2. Input Sanitization: כל קלט מהמשתמש עובר ניקוי לפני הדפסה למסך למניעת XSS.
-     * 3. State Management: ניהול חכם של תאריכים למניעת דריסת נתונים.
-     */
+    // --- Config ---
+    const START = 11; // 11:00
+    const END = 23;   // 23:00
+    const INTERVAL = 15; 
+    const DB_PREFIX = "ofir_v2_";
+    const CLIENTS_KEY = "ofir_clients_v2";
 
-    // --- Configuration ---
-    const START_HOUR = 11; // 11:00 AM
-    const END_HOUR = 23;   // 11:00 PM
-    const SLOT_DURATION = 15; // Minutes
-    const STORAGE_KEY_PREFIX = "ofir_barber_data_";
-    const CLIENT_STATS_KEY = "ofir_client_stats";
-
-    // --- State ---
     let currentDate = new Date();
-    
-    // --- Initialization ---
+
+    // --- Init ---
     document.addEventListener('DOMContentLoaded', () => {
-        updateDateDisplay();
+        updateDateUI();
         renderSchedule();
-        loadClientSuggestions();
+        loadAutocomplete();
     });
 
-    // --- Core Functions ---
-
-    function getStorageKey(date) {
-        // Format: YYYY-MM-DD
-        const d = date.getDate().toString().padStart(2, '0');
-        const m = (date.getMonth() + 1).toString().padStart(2, '0');
-        const y = date.getFullYear();
-        return `${STORAGE_KEY_PREFIX}${y}-${m}-${d}`;
+    // --- Date Logic ---
+    function updateDateUI() {
+        const dateStr = currentDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' });
+        const dayName = currentDate.toLocaleDateString('he-IL', { weekday: 'long' });
+        
+        document.getElementById('displayDay').innerText = dayName;
+        document.getElementById('displayDate').innerText = dateStr;
+        
+        // Sync hidden picker
+        const yyyy = currentDate.getFullYear();
+        const mm = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(currentDate.getDate()).padStart(2, '0');
+        document.getElementById('hiddenDatePicker').value = `${yyyy}-${mm}-${dd}`;
     }
 
-    function updateDateDisplay() {
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('currentDateDisplay').textContent = currentDate.toLocaleDateString('he-IL', options);
-    }
-
-    function changeDate(days) {
-        currentDate.setDate(currentDate.getDate() + days);
-        updateDateDisplay();
+    function changeDate(delta) {
+        currentDate.setDate(currentDate.getDate() + delta);
+        updateDateUI();
         renderSchedule();
     }
 
+    function jumpToDate(dateString) {
+        if(!dateString) return;
+        currentDate = new Date(dateString);
+        updateDateUI();
+        renderSchedule();
+    }
+
+    function getStorageKey() {
+        const y = currentDate.getFullYear();
+        const m = currentDate.getMonth() + 1;
+        const d = currentDate.getDate();
+        return `${DB_PREFIX}${y}-${m}-${d}`;
+    }
+
+    // --- Render Logic ---
     function renderSchedule() {
-        const container = document.getElementById('scheduleGrid');
-        container.innerHTML = ''; // Clean view
+        const container = document.getElementById('scheduleContainer');
+        container.innerHTML = '';
+        
+        const dayData = JSON.parse(localStorage.getItem(getStorageKey())) || {};
+        
+        let totalMinsStart = START * 60;
+        let totalMinsEnd = END * 60;
 
-        // Load data for this day
-        const dayData = JSON.parse(localStorage.getItem(getStorageKey(currentDate))) || {};
-
-        let totalMinutesStart = START_HOUR * 60;
-        let totalMinutesEnd = END_HOUR * 60;
-
-        for (let time = totalMinutesStart; time < totalMinutesEnd; time += SLOT_DURATION) {
-            const hour = Math.floor(time / 60);
-            const minute = time % 60;
-            const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        for (let time = totalMinsStart; time < totalMinsEnd; time += INTERVAL) {
+            const h = Math.floor(time / 60);
+            const m = time % 60;
+            const timeStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
             
-            const clientName = dayData[timeString] || '';
+            const client = dayData[timeStr] || '';
+            const isOccupied = client.length > 0;
+
+            // HTML Construction
+            const card = document.createElement('div');
+            card.className = `slot-card ${isOccupied ? 'occupied' : ''}`;
             
-            // Create DOM Elements safely
-            const slotEl = document.createElement('div');
-            slotEl.className = `time-slot ${clientName ? 'occupied' : ''}`;
-
-            const timeLabel = document.createElement('div');
-            timeLabel.className = 'time-label';
-            timeLabel.textContent = timeString;
-
-            const inputWrapper = document.createElement('div');
-            inputWrapper.className = 'client-input-wrapper';
-
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'client-input';
-            input.placeholder = 'פנוי...';
-            input.value = clientName;
-            input.setAttribute('list', 'clientList'); // Connect to datalist
-            
-            // Event Listener for saving on change
-            input.addEventListener('change', (e) => saveSlot(timeString, e.target.value));
-
-            const clearBtn = document.createElement('button');
-            clearBtn.className = 'clear-btn';
-            clearBtn.innerHTML = '&times;';
-            clearBtn.onclick = () => {
-                input.value = '';
-                saveSlot(timeString, '');
-            };
-
-            inputWrapper.appendChild(input);
-            slotEl.appendChild(timeLabel);
-            slotEl.appendChild(inputWrapper);
-            slotEl.appendChild(clearBtn);
-
-            container.appendChild(slotEl);
+            card.innerHTML = `
+                <div class="slot-time">${timeStr}</div>
+                <input type="text" 
+                       class="slot-input" 
+                       value="${client}" 
+                       placeholder="פנוי" 
+                       list="clientHistory"
+                       onchange="saveSlot('${timeStr}', this.value)">
+                <div class="icon-indicator">
+                    ${isOccupied ? '✂' : '○'}
+                </div>
+            `;
+            container.appendChild(card);
         }
     }
 
-    // --- Logic & Security ---
-
-    function sanitizeInput(str) {
-        // Basic sanitization to prevent storing HTML tags (XSS protection)
-        const div = document.createElement('div');
-        div.innerText = str;
-        return div.innerHTML;
-    }
-
-    function saveSlot(timeString, name) {
-        const safeName = sanitizeInput(name.trim());
-        const key = getStorageKey(currentDate);
+    // --- Saving & Data ---
+    function saveSlot(time, name) {
+        const key = getStorageKey();
+        let data = JSON.parse(localStorage.getItem(key)) || {};
         
-        let dayData = JSON.parse(localStorage.getItem(key)) || {};
-
-        if (safeName) {
-            dayData[timeString] = safeName;
-            updateClientStats(safeName); // Smart Autocomplete learning
+        if (name.trim()) {
+            data[time] = name.trim();
+            saveClientToHistory(name.trim());
         } else {
-            delete dayData[timeString];
+            delete data[time];
         }
-
-        localStorage.setItem(key, JSON.stringify(dayData));
         
-        renderSchedule(); // Re-render to update styling
-        if (safeName) showNotification();
+        localStorage.setItem(key, JSON.stringify(data));
+        renderSchedule();
+        showToast();
     }
 
-    function showNotification() {
-        const notif = document.getElementById('notification');
-        notif.style.opacity = '1';
-        setTimeout(() => {
-            notif.style.opacity = '0';
-        }, 2000);
+    function showToast() {
+        const t = document.getElementById('toast');
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2000);
     }
 
-    // --- Smart Autocomplete (Frequency Based) ---
-
-    function updateClientStats(name) {
-        let stats = JSON.parse(localStorage.getItem(CLIENT_STATS_KEY)) || {};
+    // --- Autocomplete Engine ---
+    function saveClientToHistory(name) {
+        let clients = JSON.parse(localStorage.getItem(CLIENTS_KEY)) || {};
+        const cleanName = name.toLowerCase();
         
-        // Normalize name to avoid duplicates (e.g., "Yossi" vs "yossi")
-        const lowerName = name.toLowerCase();
+        if(!clients[cleanName]) clients[cleanName] = { name: name, count: 0 };
+        clients[cleanName].count++;
         
-        if (!stats[lowerName]) {
-            stats[lowerName] = { original: name, count: 0 };
-        }
-        stats[lowerName].count++;
-        
-        localStorage.setItem(CLIENT_STATS_KEY, JSON.stringify(stats));
-        loadClientSuggestions(); // Refresh list immediately
+        localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
+        loadAutocomplete();
     }
 
-    function loadClientSuggestions() {
-        const stats = JSON.parse(localStorage.getItem(CLIENT_STATS_KEY)) || {};
-        const dataList = document.getElementById('clientList');
-        dataList.innerHTML = '';
-
-        // Convert object to array and sort by frequency (highest first)
-        const sortedClients = Object.values(stats).sort((a, b) => b.count - a.count);
-
-        // Take top 50 clients to keep DOM light
-        sortedClients.slice(0, 50).forEach(client => {
-            const option = document.createElement('option');
-            option.value = client.original;
-            dataList.appendChild(option);
-        });
+    function loadAutocomplete() {
+        const clients = JSON.parse(localStorage.getItem(CLIENTS_KEY)) || {};
+        const list = document.getElementById('clientHistory');
+        list.innerHTML = '';
+        
+        Object.values(clients)
+              .sort((a,b) => b.count - a.count)
+              .slice(0, 50)
+              .forEach(c => {
+                  const opt = document.createElement('option');
+                  opt.value = c.name;
+                  list.appendChild(opt);
+              });
     }
-
 </script>
 </body>
 </html>
